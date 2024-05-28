@@ -11,8 +11,28 @@ app.use(bodyParser.json());
 
 let books = [];
 
-// Create a new book entry
+const validateBookData = (data) => {
+  const { title, author, isbn, publicationDate } = data;
+  if (!title || typeof title !== "string") {
+    return "Title is required and should be a string";
+  }
+  if (!author || typeof author !== "string") {
+    return "Author is required and should be a string";
+  }
+  if (!isbn || typeof isbn !== "string") {
+    return "ISBN is required and should be a string";
+  }
+  if (!publicationDate || isNaN(Date.parse(publicationDate))) {
+    return "Publication Date is required and should be a valid date";
+  }
+  return null;
+};
+
 app.post("/books", (req, res) => {
+      const error = validateBookData(req.body);
+      if (error) {
+        return res.status(400).json({ message: error });
+      }
   const { title, author, isbn, publicationDate } = req.body;
   if (!title || !author || !isbn || !publicationDate) {
     return res.status(400).json({ message: "All fields are required" });
