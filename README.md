@@ -1,6 +1,9 @@
 # Boop-api
 
+To run the program node index.js
+http://localhost:3000/
 
+http://localhost:3000/books
 
 ## API Reference
 
