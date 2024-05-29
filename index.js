@@ -1,15 +1,34 @@
-// index.js
-
 const express = require("express");
 const bodyParser = require("body-parser");
 const { v4: uuidv4 } = require("uuid");
+const mongoose = require("mongoose");
+require("dotenv").config();
 
 const app = express();
 const port = 3000;
 
 app.use(bodyParser.json());
 
-let books = [];
+// Connect to MongoDB
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("Connected to MongoDB");
+  })
+  .catch((err) => {
+    console.error("Error connecting to MongoDB", err);
+  });
+
+// Define a Book schema
+const bookSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  author: { type: String, required: true },
+  isbn: { type: String, required: true },
+  publicationDate: { type: Date, required: true },
+});
+
+// Create a Book model
+const Book = mongoose.model("Book", bookSchema);
 
 const validateBookData = (data) => {
   const { title, author, isbn, publicationDate } = data;
@@ -28,51 +47,86 @@ const validateBookData = (data) => {
   return null;
 };
 
-app.post("/books", (req, res) => {
-      const error = validateBookData(req.body);
-      if (error) {
-        return res.status(400).json({ message: error });
-      }
+app.post("/books", async (req, res) => {
+  const error = validateBookData(req.body);
+  if (error) {
+    return res.status(400).json({ message: error });
+  }
   const { title, author, isbn, publicationDate } = req.body;
-  if (!title || !author || !isbn || !publicationDate) {
-    return res.status(400).json({ message: "All fields are required" });
+  try {
+    const newBook = new Book({ title, author, isbn, publicationDate });
+    await newBook.save();
+    res.status(201).json(newBook);
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error creating book", error: err.message });
   }
-  const newBook = { id: uuidv4(), title, author, isbn, publicationDate };
-  books.push(newBook);
-  res.status(201).json(newBook);
 });
 
-app.get("/books", (req, res) => {
-  res.status(200).json(books);
+app.get("/books", async (req, res) => {
+  try {
+    const books = await Book.find();
+    res.status(200).json(books);
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error fetching books", error: err.message });
+  }
 });
 
-app.get("/books/:id", (req, res) => {
+app.get("/books/:id", async (req, res) => {
   const { id } = req.params;
-  const book = books.find((b) => b.id === id);
-  if (!book) {
-    return res.status(404).json({ message: "Book not found" });
+  try {
+    const book = await Book.findById(id);
+    if (!book) {
+      return res.status(404).json({ message: "Book not found" });
+    }
+    res.status(200).json(book);
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error fetching book", error: err.message });
   }
-  res.status(200).json(book);
 });
 
-app.put("/books/:id", (req, res) => {
+app.put("/books/:id", async (req, res) => {
   const { id } = req.params;
   const { title, author, isbn, publicationDate } = req.body;
-  const bookIndex = books.findIndex((b) => b.id === id);
-  if (bookIndex === -1) {
-    return res.status(404).json({ message: "Book not found" });
+  const error = validateBookData(req.body);
+  if (error) {
+    return res.status(400).json({ message: error });
   }
-  if (!title || !author || !isbn || !publicationDate) {
-    return res.status(400).json({ message: "All fields are required" });
+  try {
+    const updatedBook = await Book.findByIdAndUpdate(
+      id,
+      { title, author, isbn, publicationDate },
+      { new: true }
+    );
+    if (!updatedBook) {
+      return res.status(404).json({ message: "Book not found" });
+    }
+    res.status(200).json(updatedBook);
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error updating book", error: err.message });
   }
-  books[bookIndex] = { id, title, author, isbn, publicationDate };
-  res.status(200).json(books[bookIndex]);
 });
 
-app.delete("/books/:id", (req, res) => {
+app.delete("/books/:id", async (req, res) => {
   const { id } = req.params;
-  books = books.filter((b) => b.id !== id);
-  res.status(204).send();
+  try {
+    const deletedBook = await Book.findByIdAndDelete(id);
+    if (!deletedBook) {
+      return res.status(404).json({ message: "Book not found" });
+    }
+    res.status(204).send();
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error deleting book", error: err.message });
+  }
 });
 
 app.listen(port, () => {
