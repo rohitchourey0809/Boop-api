@@ -9,7 +9,14 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // MongoDB connection
-mongoose.connect(process.env.MONGO_URI);
+// MongoDB connection
+const mongoUri = process.env.MONGO_URI;
+if (!mongoUri) {
+  console.error('MongoDB URI is not defined in the environment variables.');
+  process.exit(1);
+}
+
+mongoose.connect(mongoUri);
 
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, "connection error:"));
