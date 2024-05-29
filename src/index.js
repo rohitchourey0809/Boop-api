@@ -1,41 +1,55 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
-const mongoose = require("mongoose");
-const books = require("./routes/books");
-require("dotenv").config();
 
 const app = express();
-
 const port = process.env.PORT || 3000;
-app.use(
-  cors({
-    credentials: true,
-  })
-);
+
+// Middleware
+app.use(cors());
 app.use(bodyParser.json());
 
+// In-memory data store
+let books = [];
 
-app.use("/api/books", books);
-// MongoDB connection
-mongoose
-  .connect(
-    process.env.MONGO_URI ?? "mongodb://localhost:27017/book-api"
-  )
-  .then(() => {
-    console.log("Connected to MongoDB");
-    app.listen(port, () => {
-      console.log(`Server is running at http://localhost:${port}`);
-    });
-  })
-  .catch((err) => {
-    console.error("Error connecting to MongoDB", err);
-  });
+// Routes
+app.post("/api/books", (req, res) => {
+  const newBook = req.body;
+  books.push(newBook);
+  res.status(201).json(newBook);
+});
 
+app.get("/api/books", (req, res) => {
+  res.json(books);
+});
 
+app.get("/api/books/:id", (req, res) => {
+  const id = req.params.id;
+  const book = books.find((book) => book.id === id);
+  if (!book) {
+    return res.status(404).json({ error: "Book not found" });
+  }
+  res.json(book);
+});
 
-// app.listen(port, () => {
-//   console.log(`Server is running on port ${port}`);
-// });
+app.put("/api/books/:id", (req, res) => {
+  const id = req.params.id;
+  const updatedBook = req.body;
+  let index = books.findIndex((book) => book.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: "Book not found" });
+  }
+  books[index] = updatedBook;
+  res.json(updatedBook);
+});
 
-module.exports = app; // Export for Vercel
+app.delete("/api/books/:id", (req, res) => {
+  const id = req.params.id;
+  books = books.filter((book) => book.id !== id);
+  res.status(204).send();
+});
+
+// Start the server
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
