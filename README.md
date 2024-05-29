@@ -12,31 +12,31 @@ Api:  https://boop-api.vercel.app
 #### Get all items
 
 ```http
-  GET /books
+  GET /api/books
 ```
 
 #### Get all items by id
 
 ```http
-  GET /books/:id
+  GET /api/books/:id
 ```
 
 #### POST item
 
 ```http
-  POST /books
+  POST /api/books
 ```
 
 #### PUT item
 
 ```http
-  PUT /books/:id
+  PUT /api/books/:id
 ```
 
 #### DELETE item
 
 ```http
-  DELETE /books/:id
+  DELETE /api/books/:id
 ```
 
 
