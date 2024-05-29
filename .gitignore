@@ -4,15 +4,12 @@ node_modules/
 # Environment variables file
 .env
 
-# Vercel deployment files
-.vercel
-
-# macOS directory attributes
-.DS_Store
-
 # Logs
 logs
 *.log*
+
+# macOS directory attributes
+.DS_Store
 
 # IDE files
 .idea/
