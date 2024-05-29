@@ -1,6 +1,5 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const { v4: uuidv4 } = require("uuid");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
@@ -9,15 +8,29 @@ const port = 3000;
 
 app.use(bodyParser.json());
 
+let isConnected = false;
+
 // Connect to MongoDB
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
+const connectToDatabase = async () => {
+  console.log("isConnected", isConnected);
+  
+  if (isConnected) return;
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    isConnected = true;
     console.log("Connected to MongoDB");
-  })
-  .catch((err) => {
+  } catch (err) {
     console.error("Error connecting to MongoDB", err);
-  });
+  }
+};
+
+// Middleware to ensure DB connection
+app.use(async (req, res, next) => {
+   console.log("connectToDatabase");
+  await connectToDatabase();
+  console.log("connectToDatabase");
+  next();
+});
 
 // Define a Book schema
 const bookSchema = new mongoose.Schema({
