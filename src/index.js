@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const { v4: uuidv4 } = require("uuid");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -14,7 +15,7 @@ let books = [];
 
 // Routes
 app.post("/api/books", (req, res) => {
-  const newBook = req.body;
+  const newBook = { ...req.body, id: uuidv4() }; // Add unique id to the new book
   books.push(newBook);
   res.status(201).json(newBook);
 });
@@ -39,8 +40,8 @@ app.put("/api/books/:id", (req, res) => {
   if (index === -1) {
     return res.status(404).json({ error: "Book not found" });
   }
-  books[index] = updatedBook;
-  res.json(updatedBook);
+  books[index] = { ...updatedBook, id }; // Maintain the same id
+  res.json(books[index]);
 });
 
 app.delete("/api/books/:id", (req, res) => {
